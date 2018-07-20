@@ -1,0 +1,21 @@
+[Unit]
+Description=System Security Services Daemon
+# SSSD must be running before we permit user sessions
+Before=systemd-user-sessions.service nss-user-lookup.target
+Wants=nss-user-lookup.target
+
+[Service]
+Environment=DEBUG_LOGGER=--logger=files
+EnvironmentFile=-/etc/default/sssd
+ExecStart=/usr/sbin/sssd -i ${DEBUG_LOGGER}
+# insert overrides for existing users
+# - character means that if the Post exec fails the service will not be marked as failed
+# ExecStartPost=-/usr/local/sbin/create-ssd-overrides.py
+ExecStartPost=-/usr/sbin/sss_override user-import /etc/sssd/overrides
+TimeoutStartSec=180
+Type=notify
+NotifyAccess=main
+PIDFile=/var/run/sssd.pid
+
+[Install]
+WantedBy=multi-user.target
